@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { cn } from 'recn';
 import * as THREE from 'three';
-import { generatePoint, Point, generatePoints } from './Scene.utils';
+import { Point, generatePoints, generateVectors } from './Scene.utils';
+import { GLTFLoader } from '../Loaders/GLTFLoader/GLTFLoader';
 
 const cnScene = cn('Scene');
 
@@ -12,6 +13,7 @@ export const Scene = () => {
         cube: THREE.Mesh,
         theta = 0,
         radius = 10;
+
     const sceneRef = React.createRef<HTMLDivElement>();
 
     const initScene = () => {
@@ -20,49 +22,18 @@ export const Scene = () => {
         renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         sceneRef.current && sceneRef.current.appendChild(renderer.domElement);
-    };
+        let loader = new (GLTFLoader(THREE))();
+        loader.load('models/larek/larek.glb', function (model: any) {
+            console.log(model)
+            scene.add(model.scene);
+        })
+        
 
-    const drawLines = (scene: THREE.Scene, points: Point[]) => {
-        const material = new THREE.LineBasicMaterial({
-            color: '#aa00dd'
-        });
+        var light = new THREE.AmbientLight(0xffffff); // soft white light
+        scene.add(light);
 
-        for (let point1 of points) {
-            for (let point2 of points) {
-                if (point1 === point2) {
-                    continue;
-                }
-
-                const geometry = new THREE.Geometry();
-
-                geometry.vertices.push(
-                    new THREE.Vector3(...point1),
-                    new THREE.Vector3(...point2),
-                );
-
-                const line = new THREE.Line(geometry, material);
-                scene.add(line);
-            }
-        }
-    }
-
-    const drawPointLights = (scene: THREE.Scene, points: Point[]) => {
-        const sphere = new THREE.SphereBufferGeometry(0.1, 16, 8);
-        for (let point of points) {
-            const light = new THREE.PointLight(0xff0000, 1, 100);
-            light.add(new THREE.Mesh(sphere, new THREE.MeshBasicMaterial({ color: 0xff0040 })))
-            light.position.set(...point);
-            scene.add(light);
-        }
-    }
-
-    const drawGraph = () => {
-
-        const points = generatePoints(20, 5);
-
-        drawLines(scene, points);
-        drawPointLights(scene, points);
-
+        camera.position.z = 10;
+        camera.lookAt(scene.position);
     };
 
     const animate = () => {
@@ -71,26 +42,15 @@ export const Scene = () => {
         //cube.rotation.y += 0.01;
         theta += 0.1;
         camera.position.x = radius * Math.sin(THREE.Math.degToRad(theta));
-        camera.position.y = radius * Math.sin(THREE.Math.degToRad(theta));
+        //camera.position.y = radius * Math.sin(THREE.Math.degToRad(theta));
         camera.position.z = radius * Math.cos(THREE.Math.degToRad(theta));
         camera.lookAt(scene.position);
         camera.updateMatrixWorld(false);
         renderer.render(scene, camera);
     };
 
-    const drawCube = () => {
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
-
-        camera.position.z = 5;
-    };
-
     const drawScene = () => {
         initScene();
-        drawCube();
-        drawGraph();
         animate();
     }
 
